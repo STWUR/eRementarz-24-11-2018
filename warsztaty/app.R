@@ -18,10 +18,15 @@ ui <- fluidPage(
                   max = 2018, 
                   value = c(1985, 2000), 
                   sep = "", 
-                  step = 10)
+                  step = 10),
+      checkboxGroupInput(inputId = "dzielnica",
+                         label = "podaj dzielnice", 
+                         choices = c("Brak", "Fabryczna", "Krzyki", 
+                                     "Psie Pole", "Stare Miasto", 
+                                     "Śródmieście"),
+                         selected = "Psie Pole")
     ),
     
-    # Show a plot of the generated distribution
     mainPanel(
       tableOutput(outputId = "pred_table")
     )
@@ -35,10 +40,10 @@ server <- function(input, output) {
                            metraz = 50,
                            pietro = 1,
                            pietro_maks = 2,
-                           dzielnica = "Krzyki",
-                           rok = seq(input[["rok_budowy"]][1],
-                                     input[["rok_budowy"]][2],
-                                     by = 5))
+                           expand.grid(rok = seq(input[["rok_budowy"]][1],
+                                                 input[["rok_budowy"]][2],
+                                                 by = 5),
+                                       dzielnica = input[["dzielnica"]]))
     
     
     data.frame(new_data, cena_m2 = predict(model_best, new_data)[["predictions"]])
