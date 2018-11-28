@@ -74,23 +74,29 @@ melt(mieszkania, id.vars = c("dzielnica", "cena_m2")) %>%
   facet_wrap(~ dzielnica + variable, scales = "free_x")
 
 # model ------------------
+library(mlr)
 
 predict_price <- makeRegrTask(id = "price", 
                               data = mieszkania, target = "cena_m2")
 
 learnerRF <- makeLearner("regr.ranger")
 
+listLearners() %>% filter(type == "regr") %>% pull(class)
+
 cv_scheme <- makeResampleDesc("CV", iters = 5)
 
-resample(learnerRF, predict_price, cv_scheme)
+resample(learnerRF, predict_price, cv_scheme, measures = list(mse, rmse))
 
 parameters_set <- makeParamSet(
   makeIntegerParam("num.trees", lower = 400, upper = 1000),
   makeIntegerParam("min.node.size", lower = 1, upper = 5)
 )
 
+# mlrMBO
+
 optimal_rf <- tuneParams(learnerRF, predict_price, cv_scheme, 
-                         par.set = parameters_set, control = makeTuneControlRandom(maxit = 10))
+                         par.set = parameters_set, 
+                         control = makeTuneControlGrid(resolution = 2L))
 
 # Porownaj makeTuneControlRandom(maxit = 5) i makeTuneControlGrid(resolution = 2L). Która metoda daje lepszy model? 
 
@@ -111,12 +117,14 @@ worst_par <- data.frame(optimal_rf[["opt.path"]]) %>%
 model_best <- ranger(formula = cena_m2 ~ ., data = mieszkania, num.trees = best_par[["num.trees"]],
                      min.node.size = best_par[["min.node.size"]])
 
-model_worst <- ranger(formula = cena_m2 ~ ., data = mieszkania, num.trees = worst_par[["num.trees"]],
+model_worst <- ranger(formula = cena_m2 ~ ., data = mieszkania, 
+                      num.trees = worst_par[["num.trees"]],
                       min.node.size = worst_par[["min.node.size"]])
 
 library(auditor)
 
-audit_best <- audit(model_best, data = mieszkania, y = mieszkania[["cena_m2"]], label = "best", 
+audit_best <- audit(model_best, data = mieszkania, y = mieszkania[["cena_m2"]], 
+                    label = "best", 
                     predict.function = function(m, data) predict(m, data)[["predictions"]])
 
 audit_worst <- audit(model_worst, data = mieszkania, y = mieszkania[["cena_m2"]], label = "worst", 

@@ -36,7 +36,7 @@ server <- function(input, output) {
 
 ui <- fluidPage(
   titlePanel("Przewidywanie cen mieszkań"),
-  theme = shinythemes::shinytheme("cyborg"),
+  theme = shinythemes::shinytheme("journal"),
   sidebarLayout(
     sidebarPanel(
       sliderInput("rok", "Rok:", min = 1950, max = 2010, value = c(1990, 2000), step = 5, sep = ""),
